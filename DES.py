@@ -1,3 +1,5 @@
+import re
+
 # Tuples with the permutation information
 IP = (2, 6, 3, 1, 4, 8, 5, 7)
 IPi = (4, 1, 3, 5, 7, 2, 8, 6)
@@ -17,7 +19,26 @@ S1 = [[0, 1, 2, 3],
       [3, 0, 1, 0],
       [2, 1, 0, 3]]
 
-KEY = '1011011010'
+KEY = '0010010111'
+
+hex2bin_map = {
+    "0": "0000",
+    "1": "0001",
+    "2": "0010",
+    "3": "0011",
+    "4": "0100",
+    "5": "0101",
+    "6": "0110",
+    "7": "0111",
+    "8": "1000",
+    "9": "1001",
+    "A": "1010",
+    "B": "1011",
+    "C": "1100",
+    "D": "1101",
+    "E": "1110",
+    "F": "1111",
+}
 
 
 def permutation(perm, key):
@@ -51,8 +72,6 @@ def shift2(bits):
 def generateKey(key, nShifts):
     left = left_half(key)
     right = right_half(key)
-    # print("LEFT PART: ", left)
-    # print("RIGHT PART: ", right)
     if nShifts == 1:
         shift_left = shift1(left)
         shift_right = shift1(right)
@@ -60,8 +79,6 @@ def generateKey(key, nShifts):
         shift_left = shift2(left)
         shift_right = shift2(right)
     shifted_key = shift_left + shift_right
-    # print("PERMUTED ", nShifts, "SHIFT LEFT: ", shift_left, "\t", shift_right)
-    # print("SHIFTED KEY: ", shifted_key)
     return shifted_key
 
 
@@ -83,32 +100,17 @@ def fk(bits, key):
     left = left_half(bits)
     right = right_half_two(bits)
     bits = permutation(EP, right)
-    # print("EP: ", bits)
     bits = xor(bits, key)
-    # print("XOR CON LA LLAVE 1: ", bits)
     bits = look_on_sbox(left_half(bits), S0) + \
         look_on_sbox(right_half_two(bits), S1)
-    # print("BITS DEPUES DE SBOX: ", bits)
     bits = permutation(P4, bits)
-    # print("BITS PERMUTADOS CON P4: ", bits)
     second_xor = xor(bits, left)
-    # print("XOR ANTES DEL SW: ", second_xor)
-    # print("-"*40)
     return second_xor
 
 
-def encriptar(text):
-    # Texto original a encriptar
-    # print("Texto Original: ", text)
-
-    # Permutacion de los bits originales
+def S_DES_Encrypt(text):
     bits_permutados = permutation(IP, text)
-    # print("Texto Permutado: ", bits_permutados)
-
-    # Permutacion de la llave
-    print("KEY: ", KEY)
     permuted_key = permutation(P10, KEY)
-    # print("PERMUTED KEY: ", permuted_key)
 
     # Generacion de llaves, el numero es para saber cuantos shifts se hacen hacia la izquierda
     k1 = generateKey(permuted_key, 1)
@@ -117,20 +119,17 @@ def encriptar(text):
     # Permutacion a P8
     key_one = permutation(P8, k1)
     key_two = permutation(P8, k2)
-    # print("KEY ONE: ", key_one)
-    # print("KEY TWO: ", key_two)
+
+    # Funcion Fk 
     f = fk(bits_permutados, key_one)
     bits = right_half_two(bits_permutados) + f
-    # print("BITS DESPUES DE HACER LA 1RA VUELTA: ", bits)
     bits = fk(bits, key_two)
-    # print("BITS DESPUES DE HACER LA 2DA VUELTA: ", bits)
-    antes_p = bits + f
-    # print("BITS ANTES DE LA IP-1: ", antes_p)
     final_en = permutation(IPi, bits + f)
-    print("TEXTO ENCRIPTADO: ", final_en)
+
+    return final_en
 
 
-def desencriptar(cipher_text):
+def DES_Decrypt(cipher_text):
     bits = permutation(IP, cipher_text)
     permuted_key = permutation(P10, KEY)
     k1 = generateKey(permuted_key, 1)
@@ -144,12 +143,55 @@ def desencriptar(cipher_text):
     bits = right_half_two(bits) + temp
     bits = fk(bits, key_one)
     final_des = permutation(IPi, bits + temp)
-    print("TEXTO DESENCRIPTADO: ", final_des)
+    # print("TEXTO DESENCRIPTADO: ", final_des)
+    return final_des
 
+""" Funcion que recibe un texto plano y regresa su valor en binario. """
+def getBinary(text):
+    binaryText = ' '.join('0' + format(ord(x), 'b') for x in text)
+    return binaryText
+
+""" Funcion que recibe un texto en binario y regresa su valor en hexadecimal. """
+def binaryToHex(binaryText):
+    s = int(binaryText, 2)
+    y = hex(s)
+    d = str(y[2:]).upper()
+    return d
+
+def hexToBinary(hexLetter):
+    s = int(hexLetter, 16)
+    y = bin(s)
+    d = str(y[2:])
+    return d
+
+def getText(binario):
+    caracter = chr(int(binario, 2))
+    return caracter
+
+def encriptar(plain_text):
+    binary_list = [getBinary(character) for character in plain_text]
+    encrypted_elements = [S_DES_Encrypt(binary) for binary in binary_list]
+    sup_string = ""
+    for element in encrypted_elements:
+        sup_string += binaryToHex(element)
+    return sup_string
+
+def desencriptar(cipher_text):
+    binaries = "".join(hex2bin_map[character] for character in cipher_text)
+    liston_separado = [binaries[i:i+8] for i in range(0, len(binaries), 8)]
+    decrypted_elements = [DES_Decrypt(binary) for binary in liston_separado]
+    text = ""
+    for binary in decrypted_elements:
+        text += getText(binary)
+    return text
 
 def main():
-    encriptar('10110110')
-    desencriptar('01000000')
-
-
+    # cipher_text = encriptar('OUYESEDID')
+    texto_raw = input("Escribe la palabra a encriptar: ")
+    cipher_text = encriptar(texto_raw)
+    print("TEXTO ENCRIPTADO: \t", cipher_text)
+    
+    plain_text = desencriptar(cipher_text)
+    print("TEXTO DESENCRIPTADO: \t", plain_text)
+    #SK
 main()

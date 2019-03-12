@@ -50,6 +50,10 @@ def permutation(perm, key):
 
 def left_half(bits):
     return bits[:5]
+    
+
+def left_half_two(bits):
+    return bits[:4]
 
 
 def right_half(bits):
@@ -153,9 +157,15 @@ def getBinary(text):
 
 """ Funcion que recibe un texto en binario y regresa su valor en hexadecimal. """
 def binaryToHex(binaryText):
-    s = int(binaryText, 2)
-    y = hex(s)
-    d = str(y[2:]).upper()
+    if left_half_two(binaryText) == '0000':
+        s = int(binaryText, 2)
+        y = hex(s)
+        d = str(y[2:]).upper()
+        return '0' + d
+    else:
+        s = int(binaryText, 2) # Lo vuelve entero y por eso no cuenta los ceros
+        y = hex(s)
+        d = str(y[2:]).upper()
     return d
 
 def hexToBinary(hexLetter):
@@ -168,21 +178,24 @@ def getText(binario):
     caracter = chr(int(binario, 2))
     return caracter
 
-def encriptar(plain_text):
+def encriptar(plain_text2):
+    plain_text = plain_text2.replace(' ', '_')
     binary_list = [getBinary(character) for character in plain_text]
     encrypted_elements = [S_DES_Encrypt(binary) for binary in binary_list]
-    sup_string = ""
+    encrypted_text = ""
     for element in encrypted_elements:
-        sup_string += binaryToHex(element)
-    return sup_string
+        encrypted_text += binaryToHex(element)
+    return encrypted_text
 
 def desencriptar(cipher_text):
     binaries = "".join(hex2bin_map[character] for character in cipher_text)
+    print(binaries)
     liston_separado = [binaries[i:i+8] for i in range(0, len(binaries), 8)]
     decrypted_elements = [DES_Decrypt(binary) for binary in liston_separado]
-    text = ""
+    almost_plain = ""
     for binary in decrypted_elements:
-        text += getText(binary)
+        almost_plain += getText(binary)
+    text = almost_plain.replace('_', ' ')
     return text
 
 def main():
@@ -190,7 +203,8 @@ def main():
     texto_raw = input("Escribe la palabra a encriptar: ")
     cipher_text = encriptar(texto_raw)
     print("TEXTO ENCRIPTADO: \t", cipher_text)
-    
+    # print(binaryToHex('00000100'))
+
     plain_text = desencriptar(cipher_text)
     print("TEXTO DESENCRIPTADO: \t", plain_text)
     #SK

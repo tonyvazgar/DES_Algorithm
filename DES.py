@@ -275,7 +275,6 @@ def leerLlaves(docLlaves):
     return finalLines
 
 
-
 def transponer(plaintext, key, rnd=1):
   matrix = list(zip(*[list(plaintext[i:i+len(key)])
                       for i in range(0, len(plaintext), len(key))]))
@@ -283,6 +282,7 @@ def transponer(plaintext, key, rnd=1):
   if rnd > 1:
     matrix = list(map(lambda x: shift(matrix[x], x), range(len(key))))
   return "".join(matrix)
+
 
 def destransponer(cyphertext, key, rnd=1):
    matrix = [[key[i//len(key)]] + list(cyphertext[i:i+len(key)])
@@ -296,14 +296,14 @@ def destransponer(cyphertext, key, rnd=1):
    matrix = list(map(lambda x: "".join(x), list(zip(*sorted(matrix)))[1:]))
    return "".join(matrix)
 
+
 def shift(text, shifts):
   return text[shifts:] + text[:shifts]
 
 
-
 def main():
 
-    palabra_chunga = mezclar('DIDYOUSEE')
+    palabra_chunga = transponer('DIDYOUSEE', "231")
     print("Palabra aturdida: ", palabra_chunga)
     cipher_text = encriptar(palabra_chunga)
     # texto_raw = input("Escribe la palabra a encriptar: ")
@@ -311,8 +311,9 @@ def main():
     print("TEXTO ENCRIPTADO: \t", cipher_text)
     # print(binaryToHex('00000100'))
 
-    # plain_text = desencriptar(cipher_text)
-    # print("TEXTO DESENCRIPTADO: \t", plain_text)
+    plain_text = desencriptar(cipher_text)
+    final = destransponer(plain_text, "231")
+    print("TEXTO DESENCRIPTADO: \t", final)
 
 
 main()

@@ -132,9 +132,9 @@ def S_DES_Encrypt(text):
     return final_en
 
 
-def DES_Decrypt(cipher_text):
+def DES_Decrypt(cipher_text, LLAVE):
     bits = permutation(IP, cipher_text)
-    permuted_key = permutation(P10, KEY)
+    permuted_key = permutation(P10, LLAVE)
     k1 = generateKey(permuted_key, 1)
     k2 = generateKey(k1, 2)
 
@@ -256,10 +256,11 @@ def encriptar(plain_text2):
     return encrypted_text
 
 
-def desencriptar(cipher_text):
+def desencriptar(cipher_text, llave):
     binaries = "".join(hex2bin_map[character] for character in cipher_text)
     liston_separado = [binaries[i:i+8] for i in range(0, len(binaries), 8)]
-    decrypted_elements = [DES_Decrypt(binary) for binary in liston_separado]
+
+    decrypted_elements = [DES_Decrypt(binary, llave) for binary in liston_separado]
     almost_plain = ""
     for binary in decrypted_elements:
         almost_plain += getText(binary)
@@ -274,19 +275,25 @@ def leerLlaves(docLlaves):
     finalLines.sort()
     return finalLines
 
+def bruteForce(keyList, cipher_text):
+    for key in keyList:
+        plainText = desencriptar(cipher_text, key)
+        print("CON LLAVE: " + key + " TEXTO :" + plainText)
 
 def main():
 
     palabra_chunga = mezclar('DIDYOUSEE')
     print("Palabra aturdida: ", palabra_chunga)
+
     cipher_text = encriptar(palabra_chunga)
     # texto_raw = input("Escribe la palabra a encriptar: ")
     # cipher_text = encriptar(texto_raw)
+    # keys = leerLlaves("bits.txt")
     print("TEXTO ENCRIPTADO: \t", cipher_text)
-    # print(binaryToHex('00000100'))
 
-    # plain_text = desencriptar(cipher_text)
-    # print("TEXTO DESENCRIPTADO: \t", plain_text)
+    # bruteForce(keys, cipher_text)
+    plain_text = desencriptar(cipher_text, KEY)
+    print("TEXTO DESENCRIPTADO: \t", plain_text)
 
 
 main()

@@ -1,3 +1,5 @@
+import random
+import math
 import re
 
 # Tuples with the permutation information
@@ -18,6 +20,8 @@ S1 = [[0, 1, 2, 3],
       [2, 0, 1, 3],
       [3, 0, 1, 0],
       [2, 1, 0, 3]]
+
+N = [2, 3, 1]
 
 KEY = '0010010111'
 
@@ -47,22 +51,14 @@ def permutation(perm, key):
         permutated_key += key[i-1]
     return permutated_key
 
+def cutInHalf(bits):
+    return left_half(bits), right_half(bits) 
 
 def left_half(bits):
-    return bits[:5]
+    return bits[:len(bits)//2]
     
-
-def left_half_two(bits):
-    return bits[:4]
-
-
 def right_half(bits):
-    return bits[5:len(bits)]
-
-
-def right_half_two(bits):
-    return bits[4:len(bits)]
-
+    return bits[len(bits)//2:]
 
 def shift1(bits):
     return bits[1:len(bits)] + bits[0]
@@ -74,8 +70,7 @@ def shift2(bits):
 
 # Generar las llaves de acuerdo a la llave.
 def generateKey(key, nShifts):
-    left = left_half(key)
-    right = right_half(key)
+    left, right = cutInHalf(key)
     if nShifts == 1:
         shift_left = shift1(left)
         shift_right = shift1(right)
@@ -101,12 +96,12 @@ def look_on_sbox(bits, sbox):
 
 # RETURN DE FK
 def fk(bits, key):
-    left = left_half(bits)
-    right = right_half_two(bits)
+    left, right = cutInHalf(bits)
     bits = permutation(EP, right)
     bits = xor(bits, key)
     bits = look_on_sbox(left_half(bits), S0) + \
-        look_on_sbox(right_half_two(bits), S1)
+        look_on_sbox(right_half(bits), S1)
+
     bits = permutation(P4, bits)
     second_xor = xor(bits, left)
     return second_xor
@@ -126,7 +121,7 @@ def S_DES_Encrypt(text):
 
     # Funcion Fk 
     f = fk(bits_permutados, key_one)
-    bits = right_half_two(bits_permutados) + f
+    bits = right_half(bits_permutados) + f
     bits = fk(bits, key_two)
     final_en = permutation(IPi, bits + f)
 
@@ -144,7 +139,7 @@ def DES_Decrypt(cipher_text):
     key_two = permutation(P8, k2)
 
     temp = fk(bits, key_two)
-    bits = right_half_two(bits) + temp
+    bits = right_half(bits) + temp
     bits = fk(bits, key_one)
     final_des = permutation(IPi, bits + temp)
     # print("TEXTO DESENCRIPTADO: ", final_des)
@@ -157,13 +152,13 @@ def getBinary(text):
 
 """ Funcion que recibe un texto en binario y regresa su valor en hexadecimal. """
 def binaryToHex(binaryText):
-    if left_half_two(binaryText) == '0000':
+    if left_half(binaryText) == '0000':
         s = int(binaryText, 2)
         y = hex(s)
         d = str(y[2:]).upper()
         return '0' + d
     else:
-        s = int(binaryText, 2) # Lo vuelve entero y por eso no cuenta los ceros
+        s = int(binaryText, 2)
         y = hex(s)
         d = str(y[2:]).upper()
     return d
@@ -178,6 +173,68 @@ def getText(binario):
     caracter = chr(int(binario, 2))
     return caracter
 
+
+def mezclar(palabra):
+    print("Palabra es: " + palabra)
+    size = len(palabra)
+    columns = len(N)
+    print(columns)
+    rows = int((size/columns)+1 if size % 2 == 0 else size/columns)
+    print(rows)
+    print(columns, rows)
+    Matrix = [["" for x in range(columns)] for y in range(rows)]
+    count = 0
+    for i in range(columns):
+        for j in range(rows):
+            if count <= size:
+                # print(palabra[count])
+                Matrix[i][j] = palabra[count]
+                count += 1
+    # print(Matrix)
+
+    newMatrix = [["" for x in range(columns)] for y in range(rows)]
+    valores = []
+    for i in range(columns):
+        for n in N:
+            #print(Matrix[i][n-1])
+            valores.append(Matrix[i][n-1])
+    valores.reverse()
+    for i in range(columns):
+        for j in range(rows):
+            newMatrix[i][j] = valores.pop()
+
+    string = ""
+    pos = [i for i in range(columns)]
+    # print(pos)
+    for i in pos:
+        for j in range(columns):
+            string += newMatrix[j][i]
+    transpose(newMatrix, columns)
+    print("Transpuesta ", newMatrix)
+    for i in range(1, columns):
+        c = newMatrix[i]
+        shifts = range(1, len(c))
+        for s in shifts:
+            newMatrix[i] = shift(c, s)
+            shifts.pop()
+    print("shifteada", newMatrix)
+    print("Palabra transpuesta: "+string)
+    return string
+
+
+def shift(l, n):
+    return l[n:] + l[:n]
+
+
+def transpose(X, columns):
+    for i in range(columns):
+        print(X[i])
+    # iterate through columns
+        for j in range(len(X[0])):
+            X[j][i] = X[i][j]
+
+
+
 def encriptar(plain_text2):
     plain_text = plain_text2.replace(' ', '_')
     binary_list = [getBinary(character) for character in plain_text]
@@ -189,7 +246,6 @@ def encriptar(plain_text2):
 
 def desencriptar(cipher_text):
     binaries = "".join(hex2bin_map[character] for character in cipher_text)
-    print(binaries)
     liston_separado = [binaries[i:i+8] for i in range(0, len(binaries), 8)]
     decrypted_elements = [DES_Decrypt(binary) for binary in liston_separado]
     almost_plain = ""
@@ -199,13 +255,16 @@ def desencriptar(cipher_text):
     return text
 
 def main():
-    # cipher_text = encriptar('OUYESEDID')
-    texto_raw = input("Escribe la palabra a encriptar: ")
-    cipher_text = encriptar(texto_raw)
+
+    palabra_chunga = mezclar('DIDYOUSEE')
+    print("Palabra aturdida: ", palabra_chunga)
+    cipher_text = encriptar(palabra_chunga)
+    # texto_raw = input("Escribe la palabra a encriptar: ")
+    # cipher_text = encriptar(texto_raw)
     print("TEXTO ENCRIPTADO: \t", cipher_text)
     # print(binaryToHex('00000100'))
 
-    plain_text = desencriptar(cipher_text)
-    print("TEXTO DESENCRIPTADO: \t", plain_text)
-    #SK
+    # plain_text = desencriptar(cipher_text)
+    # print("TEXTO DESENCRIPTADO: \t", plain_text)
+
 main()

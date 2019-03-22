@@ -275,6 +275,32 @@ def leerLlaves(docLlaves):
     return finalLines
 
 
+
+def transponer(plaintext, key, rnd=1):
+  matrix = list(zip(*[list(plaintext[i:i+len(key)])
+                      for i in range(0, len(plaintext), len(key))]))
+  matrix = list(map(lambda x: "".join(matrix[int(x)-1]), key))
+  if rnd > 1:
+    matrix = list(map(lambda x: shift(matrix[x], x), range(len(key))))
+  return "".join(matrix)
+
+def destransponer(cyphertext, key, rnd=1):
+   matrix = [[key[i//len(key)]] + list(cyphertext[i:i+len(key)])
+             for i in range(0, len(cyphertext), len(key))]
+   matrix = [[key[i//len(key)]] + list(cyphertext[i:i+len(key)])
+             for i in range(0, len(cyphertext), len(key))]
+   return "".join(map(lambda x: "".join(x), list(zip(*sorted(matrix)))[1:]))
+   if rnd == 1:
+     matrix = list(map(lambda x: [
+                   matrix[x][0]] + shift(matrix[x][1:], len(key) - x, "r"), range(len(key))))
+   matrix = list(map(lambda x: "".join(x), list(zip(*sorted(matrix)))[1:]))
+   return "".join(matrix)
+
+def shift(text, shifts):
+  return text[shifts:] + text[:shifts]
+
+
+
 def main():
 
     palabra_chunga = mezclar('DIDYOUSEE')
